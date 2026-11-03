@@ -1,0 +1,4 @@
+This project uses the BharatCode model API.
+Model: qwen-3.8-27b
+API base URL: https://bharatcode.ai/api/model/v1
+The API key is stored only in a server-side environment variable and must never be committed.

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrepPilot AI | Placement Practice</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">PrepPilot <span>AI</span></a>
+    <span class="tag">Your placement practice partner</span>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <p class="eyebrow">PRACTISE WITH PURPOSE</p>
+      <h1>Prepare smarter.<br><span>Show what you know.</span></h1>
+      <p class="intro">Generate a placement question, attempt it yourself, and get structured feedback from AI.</p>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">01 / PRACTICE SETUP</p>
+          <h2>Choose your topic</h2>
+        </div>
+      </div>
+
+      <div class="fields">
+        <label>Subject
+          <select id="topic">
+            <option>Java</option>
+            <option>Python</option>
+            <option>SQL</option>
+            <option>Object-Oriented Programming</option>
+            <option>DBMS</option>
+          </select>
+        </label>
+        <label>Difficulty
+          <select id="difficulty">
+            <option>Beginner</option>
+            <option>Intermediate</option>
+            <option>Advanced</option>
+          </select>
+        </label>
+      </div>
+
+      <button id="generateBtn" class="primary">Generate interview question</button>
+    </section>
+
+    <section class="panel">
+      <p class="eyebrow">02 / YOUR ATTEMPT</p>
+      <h2>Question</h2>
+      <div id="question" class="question-box">Your generated question will appear here.</div>
+      <label class="answer-label" for="answer">Your answer</label>
+      <textarea id="answer" rows="6" placeholder="Write your answer in your own words..."></textarea>
+      <button id="evaluateBtn" class="primary">Evaluate my answer</button>
+    </section>
+
+    <section class="panel result-panel">
+      <p class="eyebrow">03 / AI FEEDBACK</p>
+      <h2>Learn from your attempt</h2>
+      <div id="result" class="result-box">Your feedback will appear here after evaluation.</div>
+    </section>
+
+    <p class="footnote">PrepPilot AI is a learning aid. Review important technical answers against trusted documentation.</p>
+  </main>
+
+  <script>
+    let currentQuestion = "";
+
+    const generateBtn = document.getElementById("generateBtn");
+    const evaluateBtn = document.getElementById("evaluateBtn");
+    const questionBox = document.getElementById("question");
+    const resultBox = document.getElementById("result");
+
+    async function callPractice(payload, button, defaultText) {
+      button.disabled = true;
+      button.textContent = "Please wait...";
+      resultBox.textContent = "Connecting to the AI model...";
+      try {
+        const response = await fetch("/api/practice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Something went wrong.");
+        return data.result;
+      } catch (error) {
+        resultBox.textContent = error.message;
+        return null;
+      } finally {
+        button.disabled = false;
+        button.textContent = defaultText;
+      }
+    }
+
+    generateBtn.addEventListener("click", async () => {
+      const result = await callPractice({
+        mode: "question",
+        topic: document.getElementById("topic").value,
+        difficulty: document.getElementById("difficulty").value
+      }, generateBtn, "Generate interview question");
+
+      if (result) {
+        currentQuestion = result;
+        questionBox.textContent = result;
+        resultBox.textContent = "Question ready. Try answering it above.";
+        document.getElementById("answer").value = "";
+      }
+    });
+
+    evaluateBtn.addEventListener("click", async () => {
+      const answer = document.getElementById("answer").value.trim();
+      if (!currentQuestion) {
+        resultBox.textContent = "Generate a question first.";
+        return;
+      }
+      if (!answer) {
+        resultBox.textContent = "Write your answer before requesting feedback.";
+        return;
+      }
+
+      const result = await callPractice({
+        mode: "evaluate",
+        topic: document.getElementById("topic").value,
+        question: currentQuestion,
+        answer: answer
+      }, evaluateBtn, "Evaluate my answer");
+
+      if (result) resultBox.textContent = result;
+    });
+  </script>
+</body>
+</html>
